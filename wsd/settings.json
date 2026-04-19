@@ -1,0 +1,39 @@
+{
+  "_comment": "WSD 插件的 settings.json 模板 — 复制到 .claude/settings.json 或与现有配置合并",
+  "statusLine": {
+    "command": "bash .claude/hooks/statusline.sh",
+    "_comment": "底部状态栏：WSD:项目 | 需求:阶段(进度) | ctx:XX% | 模型名"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "node .claude/hooks/lifecycle-guard.js",
+        "description": "WSD生命周期状态守卫：阻止跳过阶段的非法操作"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "command": "node .claude/hooks/audit-logger.js",
+        "description": "WSD审计日志：记录所有WSD相关操作到 .wsd/audit/"
+      },
+      {
+        "matcher": "Write|Edit",
+        "command": "node .claude/hooks/ai-code-tracker.js",
+        "description": "WSD AI编码追踪：记录AI写入行数和快照，用于统计编码占比和接受率"
+      },
+      {
+        "matcher": ".*",
+        "command": "node .claude/hooks/context-monitor.js",
+        "description": "WSD上下文监控：在上下文高使用率时发出警告"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "command": "python3 .claude/hooks/session-inject.py",
+        "description": "WSD状态注入：每次对话自动注入当前需求状态"
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "_comment": "企业基线资产注册表 — 适用于所有部门和团队",
+  "layer": "enterprise",
+  "version": "1.0.0",
+  "updatedAt": "2026-04-14T00:00:00Z",
+  "maintainers": ["platform-team"],
+  "assets": {
+    "agents": [
+      {
+        "name": "code-reviewer",
+        "file": "agents/code-reviewer.md",
+        "description": "通用代码审查 — 所有项目适用",
+        "version": "1.2.0",
+        "complianceStatus": "approved",
+        "tags": ["quality", "security"]
+      },
+      {
+        "name": "security-reviewer",
+        "file": "agents/security-reviewer.md",
+        "description": "安全审查 — OWASP Top 10，企业合规",
+        "version": "1.1.0",
+        "complianceStatus": "approved",
+        "tags": ["security", "compliance"]
+      },
+      {
+        "name": "wsd-analyst",
+        "file": "agents/wsd-analyst.md",
+        "description": "WSD需求分析师（企业版，含合规检查）",
+        "version": "1.0.0",
+        "complianceStatus": "approved",
+        "tags": ["wsd", "requirements"]
+      }
+    ],
+    "rules": [
+      {
+        "name": "security-baseline",
+        "file": "rules/security-baseline.md",
+        "description": "企业安全基线规则 — 所有代码必须遵守",
+        "version": "2.0.0",
+        "complianceStatus": "mandatory",
+        "tags": ["security", "compliance"]
+      },
+      {
+        "name": "coding-standards",
+        "file": "rules/coding-standards.md",
+        "description": "企业编码规范",
+        "version": "1.5.0",
+        "complianceStatus": "approved",
+        "tags": ["quality"]
+      }
+    ],
+    "hooks": [
+      {
+        "name": "secrets-scan",
+        "file": "hooks/secrets-scan.js",
+        "description": "提交前密钥扫描（强制）",
+        "event": "PreToolUse",
+        "version": "1.3.0",
+        "complianceStatus": "mandatory",
+        "tags": ["security"]
+      },
+      {
+        "name": "audit-log",
+        "file": "hooks/audit-log.js",
+        "description": "操作审计日志（强制）",
+        "event": "PostToolUse",
+        "version": "1.1.0",
+        "complianceStatus": "mandatory",
+        "tags": ["compliance", "audit"]
+      }
+    ],
+    "mcp": [
+      {
+        "name": "internal-api",
+        "file": "mcp/internal-api.json",
+        "description": "企业内部API MCP服务器",
+        "version": "1.0.0",
+        "tags": ["integration"]
+      }
+    ]
+  }
+}

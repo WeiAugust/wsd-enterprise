@@ -1,0 +1,71 @@
+{
+  "_comment": "将此文件复制到项目根目录的 .wsd/config.json",
+  "project": {
+    "name": "my-project",
+    "description": "项目描述",
+    "team": "my-team",
+    "department": "engineering"
+  },
+  "permissions": {
+    "roles": {
+      "viewer": ["wsd:status", "wsd:list", "wsd:show"],
+      "developer": ["wsd:propose", "wsd:spec", "wsd:review", "wsd:plan", "wsd:execute", "wsd:verify", "wsd:block", "wsd:unblock", "wsd:import"],
+      "team-lead": ["wsd:archive", "wsd:rollback", "wsd:approve-spec", "wsd:approve-plan", "wsd:approve-verify"]
+    },
+    "defaultRole": "developer"
+  },
+  "modelRouting": {
+    "wsd-analyst": "claude-opus-4-6",
+    "wsd-architect": "claude-opus-4-6",
+    "wsd-planner": "claude-sonnet-4-6",
+    "wsd-executor": "claude-sonnet-4-6",
+    "wsd-reviewer": "claude-sonnet-4-6",
+    "wsd-verifier": "claude-sonnet-4-6"
+  },
+  "lifecycle": {
+    "requireSpecApproval": true,
+    "requirePlanApproval": true,
+    "requireVerifyApproval": true,
+    "contextWarningThreshold": 0.6,
+    "contextBlockThreshold": 0.8,
+    "maxTaskEstimateHours": 2,
+    "testCoverageMinimum": 0.8
+  },
+  "integrations": {
+    "jira": {
+      "enabled": false,
+      "baseUrl": "https://your-company.atlassian.net",
+      "project": "PROJ",
+      "apiTokenEnv": "JIRA_API_TOKEN",
+      "syncBack": true
+    },
+    "feishu": {
+      "enabled": false,
+      "appId": "cli_xxxx",
+      "appSecretEnv": "FEISHU_APP_SECRET",
+      "spaceId": "xxxx",
+      "syncBack": true
+    },
+    "github": {
+      "enabled": false,
+      "repo": "owner/repo",
+      "syncBack": true
+    },
+    "wsdManager": {
+      "enabled": false,
+      "endpoint": "https://wsd-manager.internal.company.com",
+      "apiKeyEnv": "WSDM_API_KEY",
+      "orgId": "your-org-id"
+    }
+  },
+  "audit": {
+    "enabled": true,
+    "retentionDays": 90
+  },
+  "notifications": {
+    "blockAlert": {
+      "enabled": false,
+      "channels": []
+    }
+  }
+}

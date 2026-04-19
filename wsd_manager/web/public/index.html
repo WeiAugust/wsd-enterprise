@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WSD Manager — 企业 AI 资产管理</title>
+  <style>
+    :root {
+      --bg: #0d0f1a; --surface: #161926; --surface2: #1e2235; --surface3: #252a40;
+      --border: #2a2f4a; --border2: #353b5c;
+      --accent: #6366f1; --accent-dim: rgba(99,102,241,0.15); --accent-hover: #4f52d6;
+      --accent2: #22d3ee;
+      --green: #34d399; --green-dim: rgba(52,211,153,0.12);
+      --yellow: #fbbf24; --yellow-dim: rgba(251,191,36,0.12);
+      --red: #f87171; --red-dim: rgba(248,113,113,0.12);
+      --orange: #fb923c; --orange-dim: rgba(251,146,60,0.12);
+      --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.12);
+      --cyan: #22d3ee; --cyan-dim: rgba(34,211,238,0.12);
+      --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+      --radius: 8px; --radius-sm: 5px; --radius-lg: 12px;
+      --font: 'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      --mono: 'SF Mono','JetBrains Mono','Fira Code',monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+    .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid var(--border); }
+    .logo-badge { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 30px; height: 30px; border-radius: 7px; background: linear-gradient(135deg,var(--accent),var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .logo-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .logo-sub { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+    .role-switcher { margin: 12px 10px; display: flex; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; gap: 2px; }
+    .role-btn { flex: 1; padding: 5px; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; background: transparent; color: var(--text3); }
+    .role-btn.active { background: var(--accent); color: #fff; }
+
+    .sidebar-nav { padding: 8px 0; flex: 1; overflow-y: auto; }
+    .nav-section { padding: 10px 14px 4px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 14px; font-size: 12.5px; color: var(--text2); cursor: pointer; transition: all 0.12s; border-left: 2px solid transparent; user-select: none; }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: var(--accent-dim); color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+    .nav-item .ni { width: 15px; text-align: center; font-size: 13px; }
+
+    /* ── Main ── */
+    .main { overflow-y: auto; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .topbar-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; }
+    .content { padding: 22px 24px; flex: 1; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 13px; border-radius: var(--radius-sm); border: none; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface3); color: var(--text2); border: 1px solid var(--border2); }
+    .btn-secondary:hover { color: var(--text); background: var(--surface2); }
+    .btn-success { background: var(--green); color: #0a1a12; }
+    .btn-success:hover { opacity: 0.9; }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+    .btn-danger:hover { background: var(--red-dim); }
+    .btn-sm { padding: 4px 9px; font-size: 11px; }
+    .btn-icon { padding: 5px 8px; }
+
+    /* ── Forms ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .form-input, .form-select, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); padding: 7px 10px; font-size: 13px; font-family: var(--font); transition: border-color 0.15s; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Cards / Tables ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+    .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .card-body { padding: 16px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--text2); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+    td.name { color: var(--text); font-weight: 500; }
+
+    /* ── Badges ── */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .badge-draft { background: var(--surface3); color: var(--text3); }
+    .badge-pending { background: var(--yellow-dim); color: var(--yellow); }
+    .badge-published { background: var(--green-dim); color: var(--green); }
+    .badge-archived { background: var(--surface3); color: var(--text3); }
+    .badge-mandatory { background: var(--red-dim); color: var(--red); }
+    .badge-optional { background: var(--surface3); color: var(--text3); }
+    .badge-type { font-size: 9px; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
+    .type-hook { background: var(--orange-dim); color: var(--orange); }
+    .type-agent { background: var(--purple-dim); color: var(--purple); }
+    .type-skill { background: var(--accent-dim); color: var(--accent); }
+    .type-command { background: var(--cyan-dim); color: var(--cyan); }
+    .type-rule { background: var(--yellow-dim); color: var(--yellow); }
+    .type-mcp { background: var(--green-dim); color: var(--green); }
+    .type-template { background: var(--surface3); color: var(--text2); }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; }
+    .tab { padding: 8px 14px; font-size: 12px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .tab:hover { color: var(--text2); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab .tab-count { background: var(--surface3); color: var(--text3); font-size: 9px; padding: 1px 5px; border-radius: 8px; }
+    .tab.active .tab-count { background: var(--accent-dim); color: var(--accent); }
+
+    /* ── Org Tree ── */
+    .org-node-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: var(--radius-sm); cursor: pointer; transition: background 0.12s; }
+    .org-node-row:hover { background: var(--surface2); }
+    .org-node-actions { display: none; gap: 4px; }
+    .org-node-row:hover .org-node-actions { display: flex; }
+    .org-children { padding-left: 20px; }
+    .org-node-row.selected { background: var(--accent-dim); }
+    .org-node-row.selected .org-node-name { color: var(--accent); }
+
+    /* ── Asset Editor ── */
+    .editor-layout { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+    .file-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+    .file-tab { padding: 4px 10px; border-radius: var(--radius-sm); font-size: 11px; font-family: var(--mono); cursor: pointer; background: var(--surface3); color: var(--text3); border: 1px solid transparent; transition: all 0.12s; }
+    .file-tab:hover { color: var(--text2); }
+    .file-tab.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(99,102,241,0.3); }
+    .file-tab.add-file { border: 1px dashed var(--border2); }
+    .file-tab.add-file:hover { color: var(--accent); border-color: var(--accent); }
+    .code-editor { font-family: var(--mono); font-size: 12px; background: #0a0c16; border: 1px solid var(--border); border-radius: var(--radius-sm); color: #e2e8f0; padding: 12px; resize: vertical; width: 100%; min-height: 320px; line-height: 1.6; }
+    .code-editor:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Dependency ── */
+    .dep-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 6px; }
+    .dep-relation { font-size: 9px; padding: 2px 6px; border-radius: 8px; font-weight: 700; background: var(--accent-dim); color: var(--accent); }
+
+    /* ── Modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal-lg { width: 780px; }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 15px; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+    .modal-close:hover { background: var(--surface2); color: var(--text); }
+    .modal-body { padding: 20px; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* ── Version History ── */
+    .version-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .version-item:last-child { border-bottom: none; }
+    .version-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 4px; flex-shrink: 0; }
+    .version-num { font-size: 13px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+    .version-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .version-note { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+    /* ── Asset Browse ── */
+    .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .asset-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: all 0.15s; position: relative; }
+    .asset-card:hover { border-color: var(--border2); background: var(--surface2); }
+    .asset-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .asset-card.mandatory { border-color: rgba(248,113,113,0.35); }
+    .asset-card-lock { position: absolute; top: 10px; right: 10px; }
+    .asset-card-name { font-size: 13px; font-weight: 600; color: var(--text); margin: 8px 0 4px; }
+    .asset-card-desc { font-size: 11px; color: var(--text3); line-height: 1.5; }
+    .asset-card-ver { font-size: 10px; color: var(--text3); margin-top: 8px; font-family: var(--mono); }
+    .tag { font-size: 9px; padding: 2px 6px; background: var(--surface3); color: var(--text3); border-radius: 8px; display: inline-block; margin: 2px 2px 0 0; }
+
+    /* ── Stats ── */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .stat-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
+    .stat-value { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; }
+    .stat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+    /* ── Type info ── */
+    .type-info-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 11px; color: var(--text3); line-height: 1.7; }
+    .type-info-box code { font-family: var(--mono); font-size: 10px; background: var(--surface3); padding: 1px 4px; border-radius: 3px; color: var(--accent2); }
+
+    /* ── Misc ── */
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text3); }
+    .empty-icon { font-size: 36px; margin-bottom: 10px; }
+    .empty-text { font-size: 14px; color: var(--text2); }
+    .empty-sub { font-size: 12px; margin-top: 4px; }
+    .sub-box { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 6px; }
+    .sub-token { font-family: var(--mono); font-size: 11px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px; word-break: break-all; color: var(--accent2); }
+    .diff-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .diff-panel { background: #0a0c16; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; font-family: var(--mono); font-size: 11px; color: var(--text2); overflow: auto; max-height: 300px; white-space: pre-wrap; }
+    .section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .flex { display: flex; } .gap-8 { gap: 8px; } .mt-12 { margin-top: 12px; } .hidden { display: none !important; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 16px; font-size: 13px; color: var(--text); z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-color: var(--green); }
+    .toast.error { border-color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-badge">
+        <div class="logo-icon">W</div>
+        <div>
+          <div class="logo-title">WSD Manager</div>
+          <div class="logo-sub">企业 AI 资产管理平台</div>
+        </div>
+      </div>
+    </div>
+    <div class="role-switcher">
+      <button class="role-btn active" onclick="switchRole('admin')">⚙ 管理员</button>
+      <button class="role-btn" onclick="switchRole('user')">👤 用户</button>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="pageTitle">仪表盘</div>
+        <div class="topbar-sub" id="pageSubtitle"></div>
+      </div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+    <div class="content" id="pageContent"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════════════
+const S = {
+  role: 'admin', page: 'dashboard',
+  assets: [], orgs: [], users: [], subscriptions: [],
+  currentUser: null,
+  editAsset: null, editFileTab: 'main',
+  browseType: 'hook', selectedIds: new Set(),
+  assetFilter: { type: '', status: '' },
+  selectedOrgId: null,
+};
+
+const TYPE_ICONS = { hook:'🪝', agent:'🤖', skill:'⚡', command:'⌨', rule:'📋', mcp:'🔌', template:'📄' };
+const TYPE_COLORS = { hook:'type-hook', agent:'type-agent', skill:'type-skill', command:'type-command', rule:'type-rule', mcp:'type-mcp', template:'type-template' };
+const TYPES = ['hook','agent','skill','command','rule','mcp','template'];
+const STATUS_BADGE = {
+  draft: '<span class="badge badge-draft">草稿</span>',
+  pending_review: '<span class="badge badge-pending">审核中</span>',
+  published: '<span class="badge badge-published">已发布</span>',
+  archived: '<span class="badge badge-archived">已归档</span>',
+};
+const TYPE_META = {
+  hook:    { format:'json', multiFile:false, mainFile:'hooks.json', desc:'JSON — PreToolUse/PostToolUse/Stop 钩子数组，注入到 settings.json' },
+  agent:   { format:'markdown', multiFile:false, mainFile:'<name>.md', desc:'YAML frontmatter（name/description/tools/model）+ Markdown 系统提示' },
+  skill:   { format:'markdown', multiFile:true, mainFile:'SKILL.md', desc:'📁 目录型 — SKILL.md（YAML frontmatter + Markdown）+ 可选附加文件' },
+  command: { format:'markdown', multiFile:false, mainFile:'<name>.md', desc:'YAML frontmatter（description/argument-hint）+ Markdown 正文' },
+  rule:    { format:'markdown', multiFile:true, mainFile:'README.md', desc:'📁 目录型 — 多 .md 文件（common/、typescript/ 等），自动加载到上下文' },
+  mcp:     { format:'json', multiFile:false, mainFile:'.mcp.json', desc:'JSON — mcpServers 对象，配置 MCP 服务器连接' },
+  template:{ format:'markdown', multiFile:false, mainFile:'CLAUDE.md', desc:'CLAUDE.md 模板或 settings.json 模板，用于初始化项目级配置' },
+};
+
+// ══════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch('/api' + path, opts);
+  return r.json();
+}
+
+async function loadAll() {
+  const [a, o, u, s] = await Promise.all([
+    api('GET', '/assetstore'), api('GET', '/orgs'),
+    api('GET', '/users'), api('GET', '/subscriptions'),
+  ]);
+  S.assets = a.data || [];
+  S.orgs = o.data || [];
+  S.users = u.data || [];
+  S.subscriptions = s.data || [];
+}
+
+// ══════════════════════════════════════════════════════════════
+// Navigation
+// ══════════════════════════════════════════════════════════════
+const NAV = {
+  admin: [
+    { section: '管理' },
+    { id:'dashboard', icon:'📊', label:'仪表盘' },
+    { id:'orgs', icon:'🏢', label:'组织架构' },
+    { id:'users', icon:'👥', label:'成员管理' },
+    { section: '资产库' },
+    { id:'assets', icon:'🗂', label:'全部资产' },
+    { id:'subscriptions', icon:'🔗', label:'订阅管理' },
+  ],
+  user: [
+    { section: '浏览' },
+    { id:'browse', icon:'🔍', label:'资产浏览' },
+    { id:'my-subs', icon:'📦', label:'我的订阅' },
+  ],
+};
+
+function switchRole(role) {
+  S.role = role;
+  document.querySelectorAll('.role-btn').forEach((b, i) => b.classList.toggle('active', (i===0&&role==='admin')||(i===1&&role==='user')));
+  renderNav();
+  navigate(role === 'admin' ? 'dashboard' : 'browse');
+}
+
+function renderNav() {
+  const navItems = NAV[S.role].map(item => {
+    if (item.section) return `<div class="nav-section">${item.section}</div>`;
+    const active = S.page === item.id || (S.page === 'asset-edit' && item.id === 'assets') ? 'active' : '';
+    return `<div class="nav-item ${active}" onclick="navigate('${item.id}')"><span class="ni">${item.icon}</span>${item.label}</div>`;
+  }).join('');
+
+  const userPicker = S.role === 'user' ? `
+    <div style="padding:10px 12px;border-top:1px solid var(--border);margin-top:auto">
+      <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">当前用户</div>
+      <select class="form-select" style="font-size:11px" onchange="S.currentUser=this.value;renderNav();renderPage()">
+        ${S.users.map(u=>{const org=S.orgs.find(o=>o.id===u.orgId);return `<option value="${u.id}" ${S.currentUser===u.id?'selected':''}>${u.name||u.id}${org?' ('+org.name+')':''}</option>`;}).join('')}
+      </select>
+    </div>` : '';
+
+  document.getElementById('sidebarNav').innerHTML = navItems + userPicker;
+}
+
+function navigate(page) {
+  S.page = page;
+  renderNav();
+  renderPage();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Page Router
+// ══════════════════════════════════════════════════════════════
+function renderPage() {
+  const pages = { dashboard:pgDashboard, orgs:pgOrgs, users:pgUsers, assets:pgAssets, subscriptions:pgSubscriptions, browse:pgBrowse, 'my-subs':pgMySubs, 'asset-edit':pgAssetEdit };
+  (pages[S.page] || pgDashboard)();
+}
+
+function setPage(title, sub, actions, html) {
+  document.getElementById('pageTitle').textContent = title;
+  document.getElementById('pageSubtitle').innerHTML = sub || '';
+  document.getElementById('topbarActions').innerHTML = actions || '';
+  document.getElementById('pageContent').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Dashboard
+// ══════════════════════════════════════════════════════════════
+function pgDashboard() {
+  const pub = S.assets.filter(a=>a.status==='published').length;
+  const pend = S.assets.filter(a=>a.status==='pending_review').length;
+  const mand = S.assets.filter(a=>a.mandatory).length;
+  setPage('仪表盘','企业 AI 资产概览','',`
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">资产总数</div><div class="stat-value">${S.assets.length}</div><div class="stat-sub">跨所有组织</div></div>
+      <div class="stat-card"><div class="stat-label">已发布</div><div class="stat-value" style="color:var(--green)">${pub}</div><div class="stat-sub">对下游可见</div></div>
+      <div class="stat-card"><div class="stat-label">待审核</div><div class="stat-value" style="color:var(--yellow)">${pend}</div><div class="stat-sub">等待管理员审批</div></div>
+      <div class="stat-card"><div class="stat-label">必选资产</div><div class="stat-value" style="color:var(--red)">${mand}</div><div class="stat-sub">自动订阅不可禁用</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">资产类型分布</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px">
+          ${TYPES.map(t=>`<div style="text-align:center;padding:12px 8px;background:var(--surface2);border-radius:var(--radius-sm)">
+            <div style="font-size:22px;margin-bottom:4px">${TYPE_ICONS[t]}</div>
+            <div style="font-size:20px;font-weight:700">${S.assets.filter(a=>a.type===t).length}</div>
+            <div class="badge badge-type ${TYPE_COLORS[t]}" style="margin-top:4px">${t}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card mt-12">
+      <div class="card-header"><div class="card-title">最近资产</div><button class="btn btn-sm btn-primary" onclick="navigate('assets')">查看全部</button></div>
+      <div class="card-body" style="padding:0"><table><thead><tr><th>名称</th><th>类型</th><th>状态</th><th>版本</th><th>更新</th></tr></thead><tbody>
+        ${S.assets.slice(0,8).map(a=>`<tr style="cursor:pointer" onclick="openEditAsset('${a.id}')">
+          <td class="name">${a.name}${a.multiFile?' <span style="font-size:9px;color:var(--accent2)">📁</span>':''}</td>
+          <td><span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span></td>
+          <td>${STATUS_BADGE[a.status]||a.status}</td>
+          <td style="font-family:var(--mono);font-size:11px">v${a.version}</td>
+          <td style="color:var(--text3)">${fmtDate(a.updatedAt)}</td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Orgs
+// ══════════════════════════════════════════════════════════════
+function pgOrgs() {
+  const tree = buildTree(S.orgs);
+  setPage('组织架构','企业 → 部门 → 团队 → 仓库',
+    `<button class="btn btn-primary" onclick="showOrgModal()">＋ 根节点</button>`,
+    `<div style="display:grid;grid-template-columns:300px 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">组织树</div></div>
+        <div class="card-body" id="orgTreeWrap"><div style="font-size:13px">${renderTree(tree)}</div></div>
+      </div>
+      <div id="orgDetail"><div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-text">选择节点查看详情</div></div></div>
+    </div>`
+  );
+}
+
+function buildTree(orgs) {
+  const m = {}; orgs.forEach(o=>m[o.id]={...o,children:[]});
+  const roots = [];
+  orgs.forEach(o=>{ if(o.parentId&&m[o.parentId]) m[o.parentId].children.push(m[o.id]); else roots.push(m[o.id]); });
+  return roots;
+}
+
+function renderTree(nodes) {
+  const icons = {enterprise:'🏛',department:'🏢',team:'👥',repo:'📁'};
+  return nodes.map(n=>`
+    <div>
+      <div class="org-node-row ${S.selectedOrgId===n.id?'selected':''}" onclick="selectOrg('${n.id}')">
+        <span style="color:var(--text3);font-size:10px;width:12px">${n.children?.length?'▾':'·'}</span>
+        <span>${icons[n.type]||'📁'}</span>
+        <span style="flex:1;color:var(--text);font-size:13px;font-weight:500">${n.name}</span>
+        <span style="color:var(--text3);font-size:10px">${n.type}</span>
+        <div class="org-node-actions">
+          <button class="btn btn-sm btn-secondary btn-icon" onclick="event.stopPropagation();showOrgModal('${n.id}')">✏</button>
+          <button class="btn btn-sm btn-danger btn-icon" onclick="event.stopPropagation();deleteOrg('${n.id}')">✕</button>
+        </div>
+      </div>
+      ${n.children?.length?`<div class="org-children">${renderTree(n.children)}</div>`:''}
+    </div>
+  `).join('');
+}
+
+function selectOrg(id) {
+  S.selectedOrgId = id;
+  const org = S.orgs.find(o=>o.id===id); if(!org) return;
+  const adminNames = (org.adminIds||[]).map(uid=>{const u=S.users.find(x=>x.id===uid);return u?u.name||uid:uid;});
+  const orgAssets = S.assets.filter(a=>a.orgId===id);
+  document.getElementById('orgDetail').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">${org.name}</div><div style="font-size:11px;color:var(--text3)">${org.type}</div></div>
+        <div class="flex gap-8">
+          <button class="btn btn-sm btn-secondary" onclick="showOrgModal('${id}')">编辑</button>
+          <button class="btn btn-sm btn-primary" onclick="showOrgModal(null,'${id}')">添加子节点</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div><div class="form-label">管理员</div><div style="font-size:13px">${adminNames.length?adminNames.join(', '):'—'}</div></div>
+          <div><div class="form-label">资产数量</div><div style="font-size:13px">${orgAssets.length}</div></div>
+        </div>
+        <hr class="divider">
+        <div class="section-title">该组织资产</div>
+        ${orgAssets.length===0?'<div style="font-size:12px;color:var(--text3)">暂无资产</div>':
+          orgAssets.map(a=>`<div class="sub-box" style="cursor:pointer" onclick="openEditAsset('${a.id}')">
+            <span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span>
+            <span style="flex:1;font-size:12px">${a.name}</span>${STATUS_BADGE[a.status]}
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('orgTreeWrap').querySelector('div').innerHTML = renderTree(buildTree(S.orgs));
+}
+
+function showOrgModal(editId, defaultParentId) {
+  const org = editId ? S.orgs.find(o=>o.id===editId) : null;
+  const opts = S.orgs.map(o=>`<option value="${o.id}" ${(org?.parentId||defaultParentId)===o.id?'selected':''}>${o.name} (${o.type})</option>`).join('');
+  openModal(org?'编辑组织':'添加组织节点',`
+    <div class="form-group"><label class="form-label">名称 *</label><input class="form-input" id="oName" value="${org?.name||''}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">类型</label>
+        <select class="form-select" id="oType">${['enterprise','department','team','repo'].map(t=>`<option value="${t}" ${org?.type===t?'selected':''}>${t}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">上级</label>
+        <select class="form-select" id="oParent"><option value="">（根节点）</option>${opts}</select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">管理员 ID（逗号分隔）</label><input class="form-input" id="oAdmins" value="${(org?.adminIds||[]).join(', ')}"></div>
+  `,[
+    {label:org?'保存':'创建',cls:'btn-primary',action:async()=>{
+      const name=document.getElementById('oName').value.trim();
+      const type=document.getElementById('oType').value;
+      const parentId=document.getElementById('oParent').value||null;
+      const adminIds=document.getElementById('oAdmins').value.split(',').map(s=>s.trim()).filter(Boolean);
+      if(!name) return toast('请输入名称','error');
+      org ? await api('PUT',`/orgs/${editId}`,{name,type,parentId,adminIds}) : await api('POST','/orgs',{name,type,parentId,adminIds});
+      closeModal(); await loadAll(); pgOrgs();
+    }},
+    {label:'取消',cls:'btn-secondary',action:closeModal},
+  ]);
+}
+
+async function deleteOrg(id) {
+  if(!confirm('确定删除？')) return;
+  await api('DELETE',`/orgs/${id}`);
+  S.selectedOrgId=null; await loadAll(); pgOrgs();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Users
+// ══════════════════════════════════════════════════════════════
+function pgUsers() {
+  setPage('成员管理',`${S.users.length} 位成员`,
+    `<button class="btn btn-primary" onclick="showUserModal()">＋ 添加成员</button>`,
+    `<div class="card"><div class="card-body" style="padding:0"><table>
+      <thead><tr><th>姓名</th><th>邮箱</th><th>所属组织</th><th>角色</th><th>操作</th></tr></thead>
+      <tbody>${S.users.length===0?`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px">暂无成员</td></tr>`:
+        S.users.map(u=>{
+          const org=S.orgs.find(o=>o.id===u.orgId);
+          const isAdmin=S.orgs.some(o=>(o.adminIds||[]).includes(u.id));
+          return `<tr>
+            <td class="name">${u.name||u.id}</td><td>${u.email||'—'}</td>
+            <td>${org?org.name:u.orgId||'—'}</td>
+            <td>${isAdmin?'<span class="badge badge-pending">管理员</span>':'<span class="badge badge-draft">成员</span>'}</td>
+            <td><button class="btn btn-sm btn-secondary" onclick="showUserModal('${u.id}')">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">删除</button></td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div></div>`
+  );
+}
+
+function showUserModal(editId) {
+  const u=editId?S.users.find(x=>x.id===editId):null;
+  const opts=S.orgs.map(o=>`<option value="${o.id}" ${u?.orgId===o.id?'selected':''}>${o.name}</option>`).join('');
+  openModal(u?'编辑成员':'添加成员',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">姓名 *</label><input class="form-input" id="uName" value="${u?.name||''}"></div>
+      <div class="form-group"><label class="form-label">邮箱</label><input class="form-input" id="uEmail" value="${u?.email||''}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">所属组织</label>
+      <select class="form-select" id="uOrg"><option value="">不指定</option>${opts}</select>
+    </div>
+  `,[
+    {label:u?'保存':'创建',cls:'btn-primary',action:async()=>{
+      const name=document.getElementById('uName').value.trim();
+      const email=document.getElementById('uEmail').value.trim();
+      const orgId=document.getElementById('uOrg').value||undefined;
+      if(!name) return toast('请输入姓名','error');
+      u?await api('PUT',`/users/${editId}`,{name,email,orgId}):await api('POST','/users',{name,email,orgId});
+      closeModal(); await loadAll(); pgUsers();
+    }},
+    {label:'取消',cls:'btn-secondary',action:closeModal},
+  ]);
+}
+
+async function deleteUser(id) {
+  if(!confirm('确定删除？')) return;
+  await api('DELETE',`/users/${id}`); await loadAll(); pgUsers();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Assets (Admin)
+// ══════════════════════════════════════════════════════════════
+function pgAssets() {
+  const f=S.assetFilter;
+  const list=S.assets.filter(a=>(!f.type||a.type===f.type)&&(!f.status||a.status===f.status));
+  setPage('资产库（管理视图）',`${list.length} / ${S.assets.length} 个资产`,
+    `<button class="btn btn-primary" onclick="showCreateAssetModal()">＋ 新建资产</button>`,
+    `<div style="display:flex;gap:8px;margin-bottom:14px">
+      <select class="form-select" style="width:130px" onchange="S.assetFilter.type=this.value;pgAssets()">
+        <option value="">所有类型</option>
+        ${TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${TYPE_ICONS[t]} ${t}</option>`).join('')}
+      </select>
+      <select class="form-select" style="width:120px" onchange="S.assetFilter.status=this.value;pgAssets()">
+        <option value="">所有状态</option>
+        <option value="draft" ${f.status==='draft'?'selected':''}>草稿</option>
+        <option value="pending_review" ${f.status==='pending_review'?'selected':''}>审核中</option>
+        <option value="published" ${f.status==='published'?'selected':''}>已发布</option>
+      </select>
+    </div>
+    <div class="card"><div class="card-body" style="padding:0"><table>
+      <thead><tr><th>名称</th><th>类型</th><th>所属组织</th><th>版本</th><th>状态</th><th>必选</th><th>操作</th></tr></thead>
+      <tbody>${list.length===0?`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px">暂无资产</td></tr>`:
+        list.map(a=>{
+          const org=S.orgs.find(o=>o.id===a.orgId);
+          const multiTag=a.multiFile?` <span style="font-size:9px;color:var(--accent2)">📁 目录</span>`:'';
+          return `<tr>
+            <td class="name" style="cursor:pointer" onclick="openEditAsset('${a.id}')">${a.name}${multiTag}</td>
+            <td><span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span></td>
+            <td style="font-size:11px">${org?org.name:a.orgId||'—'}</td>
+            <td style="font-family:var(--mono);font-size:11px">v${a.version}${a.publishedVersion&&a.version!==a.publishedVersion?` <span style="color:var(--text3)">(pub:v${a.publishedVersion})</span>`:''}</td>
+            <td>${STATUS_BADGE[a.status]||a.status}</td>
+            <td>${a.mandatory?'<span class="badge badge-mandatory">🔒 必选</span>':'<span class="badge badge-optional">可选</span>'}</td>
+            <td><div class="flex gap-8">
+              <button class="btn btn-sm btn-secondary" onclick="openEditAsset('${a.id}')">编辑</button>
+              ${a.status==='draft'?`<button class="btn btn-sm btn-secondary" onclick="doSubmit('${a.id}')">提交</button>`:''}
+              ${a.status==='pending_review'?`<button class="btn btn-sm btn-success" onclick="doPublish('${a.id}')">发布</button>`:''}
+              ${a.status==='published'&&!a.mandatory?`<button class="btn btn-sm btn-secondary" onclick="doUnpublish('${a.id}')">撤回</button>`:''}
+              ${!a.mandatory?`<button class="btn btn-sm btn-danger" onclick="doDelete('${a.id}')">删除</button>`:''}
+            </div></td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div></div>`
+  );
+}
+
+async function doSubmit(id) { await api('POST',`/assetstore/${id}/submit`); await loadAll(); pgAssets(); toast('已提交审核'); }
+async function doPublish(id) {
+  const note=prompt('发布备注：')||'';
+  await api('POST',`/assetstore/${id}/publish`,{publishedBy:S.currentUser,note});
+  await loadAll(); pgAssets(); toast('发布成功','success');
+}
+async function doUnpublish(id) {
+  if(!confirm('撤回后下游不可见，确定？')) return;
+  await api('POST',`/assetstore/${id}/unpublish`); await loadAll(); pgAssets(); toast('已撤回');
+}
+async function doDelete(id) {
+  if(!confirm('确定删除此资产？')) return;
+  await api('DELETE',`/assetstore/${id}`); await loadAll(); pgAssets(); toast('已删除');
+}
+
+function showCreateAssetModal() {
+  const opts=S.orgs.map(o=>`<option value="${o.id}">${o.name} (${o.type})</option>`).join('');
+  openModal('新建资产',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">名称 *</label><input class="form-input" id="nName" placeholder="kebab-case 命名"></div>
+      <div class="form-group"><label class="form-label">类型 *</label>
+        <select class="form-select" id="nType">${TYPES.map(t=>`<option value="${t}">${TYPE_ICONS[t]} ${t}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">所属组织 *</label>
+      <select class="form-select" id="nOrg"><option value="">请选择</option>${opts}</select>
+    </div>
+    <div class="form-group"><label class="form-label">描述</label><input class="form-input" id="nDesc" placeholder="简短描述此资产的用途"></div>
+    <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="nMand"> 必选资产（订阅时自动选中，不可取消）
+    </label></div>
+  `,[
+    {label:'创建',cls:'btn-primary',action:async()=>{
+      const name=document.getElementById('nName').value.trim();
+      const type=document.getElementById('nType').value;
+      const orgId=document.getElementById('nOrg').value;
+      const description=document.getElementById('nDesc').value.trim();
+      const mandatory=document.getElementById('nMand').checked;
+      if(!name||!orgId) return toast('请填写名称和组织','error');
+      const r=await api('POST','/assetstore',{name,type,orgId,description,mandatory});
+      if(!r.success) return toast(r.error,'error');
+      closeModal(); await loadAll(); openEditAsset(r.data.id);
+    }},
+    {label:'取消',cls:'btn-secondary',action:closeModal},
+  ]);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Asset Editor
+// ══════════════════════════════════════════════════════════════
+function openEditAsset(id) {
+  S.editAsset = S.assets.find(a=>a.id===id) || null;
+  S.editFileTab = 'main';
+  S.page = 'asset-edit';
+  renderNav();
+  pgAssetEdit();
+}
+
+function pgAssetEdit() {
+  const a = S.editAsset;
+  if(!a) return navigate('assets');
+  const tm = TYPE_META[a.type] || TYPE_META.rule;
+  const extraFiles = a.extraFiles || [];
+  const allFiles = [{name:tm.mainFile.replace('<name>',a.name), isMain:true}].concat(extraFiles.map(f=>({name:f.name,isMain:false})));
+
+  let currentContent = '';
+  if(S.editFileTab==='main') currentContent = a.content||'';
+  else {
+    const ef = extraFiles.find(f=>f.name===S.editFileTab);
+    currentContent = ef ? ef.content : '';
+  }
+
+  setPage(`编辑 — ${a.name}`,
+    `${TYPE_ICONS[a.type]} ${a.type} · ${STATUS_BADGE[a.status]} · <span style="font-family:var(--mono);font-size:11px">v${a.version}</span>`,
+    `<div class="flex gap-8">
+      <button class="btn btn-secondary" onclick="navigate('assets')">← 返回</button>
+      <button class="btn btn-secondary" onclick="showVersionHistory('${a.id}')">📜 历史</button>
+      ${a.publishedVersion&&a.version!==a.publishedVersion?`<button class="btn btn-secondary" onclick="showDiff('${a.id}')">⟷ 差异</button>`:''}
+      ${a.status==='draft'?`<button class="btn btn-secondary" onclick="doSubmitEdit('${a.id}')">提交审核</button>`:''}
+      ${a.status==='pending_review'?`<button class="btn btn-success" onclick="doPublishEdit('${a.id}')">✓ 发布</button>`:''}
+      <button class="btn btn-primary" onclick="saveAsset('${a.id}')">保存草稿</button>
+    </div>`,
+    `<div class="editor-layout">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="type-info-box">
+          <strong>${TYPE_ICONS[a.type]} ${a.type}</strong> — ${tm.desc}
+          ${tm.multiFile?`<br>📁 安装到 <code>.claude/${a.type}s/${a.name}/</code>，目录型，可包含多个文件`:`<br>📄 安装到 <code>.claude/${a.type}s/${allFiles[0].name}</code>`}
+          ${a.publishedVersion&&a.version!==a.publishedVersion?`<br>⚠ 草稿 v${a.version} vs 发布 v${a.publishedVersion} — 有未发布的修改`:''}
+        </div>
+        ${tm.multiFile?`
+          <div>
+            <div class="file-tabs">
+              ${allFiles.map(f=>`
+                <span class="file-tab ${(S.editFileTab==='main'&&f.isMain)||S.editFileTab===f.name?'active':''}"
+                  onclick="switchEditTab('${a.id}','${f.isMain?'main':f.name}')">
+                  ${f.isMain?'📄':'📝'} ${f.name}
+                </span>
+              `).join('')}
+              <span class="file-tab add-file" onclick="addExtraFile('${a.id}')">＋ 文件</span>
+            </div>
+            ${S.editFileTab!=='main'?`<div style="text-align:right;margin-bottom:6px">
+              <button class="btn btn-sm btn-danger" onclick="removeExtraFile('${a.id}','${S.editFileTab}')">删除文件</button>
+            </div>`:''}
+          </div>
+        `:''}
+        <div class="form-group">
+          <label class="form-label">${S.editFileTab==='main'?allFiles[0].name:S.editFileTab} <span style="font-size:10px;font-weight:400;color:var(--text3);margin-left:6px">${tm.format.toUpperCase()}</span></label>
+          <textarea class="code-editor" id="assetContent" rows="22">${escHtml(currentContent)}</textarea>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">基本信息</div></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">名称</label><input class="form-input" id="editName" value="${escAttr(a.name)}"></div>
+              <div class="form-group"><label class="form-label">版本</label><input class="form-input" id="editVer" value="${escAttr(a.version)}"></div>
+            </div>
+            <div class="form-group"><label class="form-label">描述</label><input class="form-input" id="editDesc" value="${escAttr(a.description||'')}"></div>
+            <div class="form-group"><label class="form-label">标签（逗号分隔）</label><input class="form-input" id="editTags" value="${escAttr((a.tags||[]).join(', '))}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">依赖关系</div><button class="btn btn-sm btn-secondary" onclick="showAddDep('${a.id}')">＋</button></div>
+          <div class="card-body">
+            ${(a.dependencies||[]).length===0?'<div style="font-size:12px;color:var(--text3)">暂无依赖</div>':
+              (a.dependencies||[]).map(d=>`<div class="dep-item">
+                <span class="badge badge-type ${TYPE_COLORS[d.type]||''}">${TYPE_ICONS[d.type]||'?'}</span>
+                <div style="flex:1">
+                  <div style="font-size:12px;font-weight:500">${d.assetName||d.assetId||'外部'}</div>
+                  <span class="dep-relation">${d.relation}</span>
+                  ${d.note?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${d.note}</div>`:''}
+                </div>
+                <button class="btn btn-sm btn-danger btn-icon" onclick="doRemoveDep('${a.id}','${d.id}')">✕</button>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">被哪些资产使用</div></div>
+          <div class="card-body" id="upstreamBox"><div style="font-size:12px;color:var(--text3)">加载中…</div></div>
+        </div>
+
+        ${a.publishedAt?`<div class="card">
+          <div class="card-header"><div class="card-title">发布信息</div></div>
+          <div class="card-body" style="font-size:12px;color:var(--text3)">
+            <div>发布者: <span style="color:var(--text2)">${a.publishedBy}</span></div>
+            <div style="margin-top:4px">时间: ${fmtDate(a.publishedAt)}</div>
+          </div>
+        </div>`:''}
+      </div>
+    </div>`
+  );
+  loadUpstream(a.id);
+}
+
+async function loadUpstream(id) {
+  const r = await api('GET',`/assetstore/${id}/dependencies`);
+  const el = document.getElementById('upstreamBox'); if(!el) return;
+  if(!r.success||!r.data.upstream.length) {
+    el.innerHTML='<div style="font-size:12px;color:var(--text3)">暂无（未被其他资产依赖）</div>'; return;
+  }
+  el.innerHTML = r.data.upstream.map(u=>`<div class="dep-item" style="cursor:pointer" onclick="openEditAsset('${u.assetId}')">
+    <span class="badge badge-type ${TYPE_COLORS[u.type]}">${TYPE_ICONS[u.type]}</span>
+    <div style="flex:1"><div style="font-size:12px;font-weight:500">${u.assetName}</div><span class="dep-relation">${u.relation}</span></div>
+  </div>`).join('');
+}
+
+function switchEditTab(id, tabName) {
+  // Save current textarea before switch
+  const ta = document.getElementById('assetContent');
+  if(ta && S.editAsset) {
+    if(S.editFileTab==='main') S.editAsset.content = ta.value;
+    else {
+      const ef = S.editAsset.extraFiles||[];
+      const idx = ef.findIndex(f=>f.name===S.editFileTab);
+      if(idx>=0) ef[idx].content = ta.value;
+    }
+  }
+  S.editFileTab = tabName;
+  pgAssetEdit();
+}
+
+function addExtraFile(id) {
+  const name = prompt('文件路径（如 common/style.md 或 examples/usage.md）：'); if(!name) return;
+  if(!S.editAsset.extraFiles) S.editAsset.extraFiles=[];
+  S.editAsset.extraFiles.push({name, content:`# ${name}\n\n`, description:''});
+  S.editFileTab = name;
+  pgAssetEdit();
+}
+
+async function removeExtraFile(id, fileName) {
+  if(!confirm(`删除 ${fileName}？`)) return;
+  const r = await api('DELETE',`/assetstore/${id}/files`,{fileName});
+  if(!r.success) return toast(r.error,'error');
+  await loadAll(); S.editAsset = S.assets.find(a=>a.id===id);
+  S.editFileTab='main'; pgAssetEdit(); toast('文件已删除');
+}
+
+async function saveAsset(id) {
+  const a = S.editAsset;
+  const ta = document.getElementById('assetContent');
+  if(ta) {
+    if(S.editFileTab==='main') a.content=ta.value;
+    else { const ef=a.extraFiles||[]; const idx=ef.findIndex(f=>f.name===S.editFileTab); if(idx>=0) ef[idx].content=ta.value; }
+  }
+  const name = document.getElementById('editName')?.value.trim()||a.name;
+  const description = document.getElementById('editDesc')?.value.trim()||a.description;
+  const version = document.getElementById('editVer')?.value.trim()||a.version;
+  const tags = (document.getElementById('editTags')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const r = await api('PUT',`/assetstore/${id}`,{name,description,version,tags,content:a.content});
+  if(!r.success) return toast(r.error,'error');
+  for(const ef of (a.extraFiles||[])) {
+    await api('PUT',`/assetstore/${id}/files`,{fileName:ef.name,content:ef.content,description:ef.description||''});
+  }
+  await loadAll(); S.editAsset=S.assets.find(x=>x.id===id)||a;
+  toast('已保存','success'); pgAssetEdit();
+}
+
+async function doSubmitEdit(id) { await api('POST',`/assetstore/${id}/submit`); await loadAll(); S.editAsset=S.assets.find(a=>a.id===id); pgAssetEdit(); toast('已提交审核'); }
+async function doPublishEdit(id) {
+  const note=prompt('发布备注：')||'';
+  await api('POST',`/assetstore/${id}/publish`,{publishedBy:S.currentUser,note});
+  await loadAll(); S.editAsset=S.assets.find(a=>a.id===id); pgAssetEdit(); toast('发布成功','success');
+}
+
+function showAddDep(assetId) {
+  const opts = S.assets.filter(a=>a.id!==assetId).map(a=>`<option value="${a.id}" data-type="${a.type}" data-name="${a.name}">${TYPE_ICONS[a.type]} ${a.name} (${a.type})</option>`).join('');
+  openModal('添加依赖关系',`
+    <div class="form-group"><label class="form-label">依赖的资产</label>
+      <select class="form-select" id="dAsset"><option value="">（外部资产，手动填写）</option>${opts}</select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">资产类型（外部）</label>
+        <select class="form-select" id="dType">${TYPES.map(t=>`<option value="${t}">${TYPE_ICONS[t]} ${t}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">关系</label>
+        <select class="form-select" id="dRelation">
+          <option value="invokes">invokes（调用）</option>
+          <option value="references">references（引用）</option>
+          <option value="uses-tool">uses-tool（使用工具）</option>
+          <option value="extends">extends（继承）</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">资产名称（外部时填写）</label><input class="form-input" id="dName"></div>
+    <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="dNote"></div>
+  `,[
+    {label:'添加',cls:'btn-primary',action:async()=>{
+      const sel=document.getElementById('dAsset');
+      const opt=sel.options[sel.selectedIndex];
+      const depId=sel.value;
+      const type=depId?opt.dataset.type:document.getElementById('dType').value;
+      const assetName=depId?opt.dataset.name:document.getElementById('dName').value.trim();
+      const relation=document.getElementById('dRelation').value;
+      const note=document.getElementById('dNote').value.trim();
+      const r=await api('POST',`/assetstore/${assetId}/dependencies`,{type,assetId:depId,assetName,relation,note});
+      if(!r.success) return toast(r.error,'error');
+      closeModal(); await loadAll(); S.editAsset=S.assets.find(a=>a.id===assetId); pgAssetEdit(); toast('依赖已添加');
+    }},
+    {label:'取消',cls:'btn-secondary',action:closeModal},
+  ]);
+}
+
+async function doRemoveDep(assetId, depId) {
+  if(!confirm('删除此依赖？')) return;
+  await api('DELETE',`/assetstore/${assetId}/dependencies/${depId}`);
+  await loadAll(); S.editAsset=S.assets.find(a=>a.id===assetId); pgAssetEdit();
+}
+
+function showVersionHistory(id) {
+  const a=S.assets.find(x=>x.id===id)||S.editAsset; if(!a) return;
+  const hist=[...(a.versionHistory||[])].reverse();
+  document.getElementById('modalBox').classList.add('modal-lg');
+  openModal(`版本历史 — ${a.name}`,
+    hist.length===0?'<div class="empty-state"><div class="empty-text">暂无发布历史</div></div>':
+    hist.map(h=>`<div class="version-item">
+      <div class="version-dot"></div>
+      <div>
+        <div class="version-num">v${h.version}</div>
+        <div class="version-meta">${fmtDate(h.publishedAt)} · ${h.publishedBy}</div>
+        ${h.note?`<div class="version-note">${h.note}</div>`:''}
+        ${h.extraFiles?.length?`<div style="font-size:10px;color:var(--text3);margin-top:3px">📁 包含 ${h.extraFiles.length} 个附加文件</div>`:''}
+      </div>
+    </div>`).join(''),
+    [{label:'关闭',cls:'btn-secondary',action:()=>{closeModal();document.getElementById('modalBox').classList.remove('modal-lg');}}]
+  );
+}
+
+function showDiff(id) {
+  const a=S.assets.find(x=>x.id===id)||S.editAsset; if(!a) return;
+  document.getElementById('modalBox').classList.add('modal-lg');
+  openModal(`版本差异 — ${a.name}`,`
+    <div class="diff-row">
+      <div><div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:6px">📝 草稿 v${a.version}</div>
+        <div class="diff-panel">${escHtml(a.content||'')}</div>
+      </div>
+      <div><div style="font-size:10px;font-weight:600;color:var(--green);margin-bottom:6px">✅ 已发布 v${a.publishedVersion}</div>
+        <div class="diff-panel">${escHtml(a.publishedContent||'（尚无发布版本）')}</div>
+      </div>
+    </div>
+  `,[{label:'关闭',cls:'btn-secondary',action:()=>{closeModal();document.getElementById('modalBox').classList.remove('modal-lg');}}]);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Subscriptions (Admin)
+// ══════════════════════════════════════════════════════════════
+function pgSubscriptions() {
+  setPage('订阅管理',`${S.subscriptions.length} 个订阅`,
+    `<button class="btn btn-secondary" onclick="switchRole('user');navigate('browse')">切换到用户视图创建订阅</button>`,
+    `<div class="card"><div class="card-body" style="padding:0"><table>
+      <thead><tr><th>名称</th><th>资产数</th><th>所属组织</th><th>创建者</th><th>创建时间</th><th>操作</th></tr></thead>
+      <tbody>${S.subscriptions.length===0?`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px">暂无订阅</td></tr>`:
+        S.subscriptions.map(s=>{
+          const ids=s.selectedAssetIds||s.assetIds||[];
+          const org=S.orgs.find(o=>o.id===s.orgId);
+          const creator=S.users.find(u=>u.id===s.userId);
+          return `<tr>
+            <td class="name">${s.label||s.id}</td>
+            <td>${ids.length}</td>
+            <td>${org?org.name:(s.orgId||'—')}</td>
+            <td>${creator?creator.name:(s.userId||'—')}</td>
+            <td>${fmtDate(s.createdAt)}</td>
+            <td>
+              <button class="btn btn-sm btn-secondary" onclick="showSubToken('${s.id}')">查看 Token</button>
+              <button class="btn btn-sm btn-danger" onclick="doDeleteSub('${s.id}')">删除</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div></div>`
+  );
+}
+
+function showSubToken(id) {
+  const s=S.subscriptions.find(x=>x.id===id); if(!s) return;
+  const url=`${location.origin}/api/subscriptions/resolve/${s.token||s.id}`;
+  const ids=s.selectedAssetIds||s.assetIds||[];
+  openModal('订阅链接',`
+    <div class="form-group"><label class="form-label">wsdm install 命令</label><div class="sub-token">wsdm install ${url}</div></div>
+    <div class="form-group"><label class="form-label">包含资产（${ids.length}）</label>
+      ${ids.map(aid=>{const a=S.assets.find(x=>x.id===aid);return a?`<div class="sub-box"><span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span><span style="font-size:12px;flex:1">${a.name}</span>${a.mandatory?'<span class="badge badge-mandatory">🔒</span>':''}</div>`:''}).join('')}
+    </div>
+  `,[{label:'关闭',cls:'btn-secondary',action:closeModal}]);
+}
+
+async function doDeleteSub(id) {
+  if(!confirm('删除此订阅？')) return;
+  await api('DELETE',`/subscriptions/${id}`); await loadAll(); pgSubscriptions();
+}
+async function doDeleteMySub(id) {
+  if(!confirm('删除此订阅？')) return;
+  await api('DELETE',`/subscriptions/${id}`); await loadAll(); pgMySubs();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Browse (User view)
+// ══════════════════════════════════════════════════════════════
+async function pgBrowse() {
+  const r = await api('GET','/assetstore?status=published');
+  const pub = r.data||[];
+  pub.filter(a=>a.mandatory).forEach(a=>S.selectedIds.add(a.id));
+
+  const byType = {}; TYPES.forEach(t=>{byType[t]=pub.filter(a=>a.type===t);});
+  const active = S.browseType;
+
+  setPage('资产浏览','选择需要的 AI 资产，生成订阅包',
+    `<button class="btn btn-primary" onclick="genSub()">🔗 生成订阅（${S.selectedIds.size}）</button>`,
+    `<div class="tabs">
+      ${TYPES.map(t=>`<div class="tab ${active===t?'active':''}" onclick="S.browseType='${t}';pgBrowse()">
+        ${TYPE_ICONS[t]} ${t} <span class="tab-count">${byType[t].length}</span>
+      </div>`).join('')}
+    </div>
+    ${byType[active].length===0?`<div class="empty-state"><div class="empty-icon">${TYPE_ICONS[active]}</div><div class="empty-text">暂无已发布的 ${active} 资产</div></div>`:`
+    <div class="asset-grid">
+      ${byType[active].map(a=>{
+        const sel=S.selectedIds.has(a.id); const mand=a.mandatory;
+        const clickFn=mand?'':'toggleSel(\''+a.id+'\')';
+        return `<div class="asset-card ${sel?'selected':''} ${mand?'mandatory':''}" onclick="${clickFn}" style="${mand?'cursor:default':''}">
+          ${mand?'<div class="asset-card-lock">🔒</div>':''}
+          <div><span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span>${mand?' <span class="badge badge-mandatory">必选</span>':''}${sel&&!mand?' <span class="badge badge-published">✓ 已选</span>':''}</div>
+          <div class="asset-card-name">${a.name}</div>
+          <div class="asset-card-desc">${a.description||'—'}</div>
+          <div>${(a.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+          <div class="asset-card-ver">v${a.publishedVersion||a.version}</div>
+        </div>`;
+      }).join('')}
+    </div>`}
+    <div class="card mt-12">
+      <div class="card-header">
+        <div class="card-title">已选（${S.selectedIds.size}）</div>
+        <button class="btn btn-sm btn-secondary" onclick="S.selectedIds=new Set(S.assets.filter(a=>a.mandatory&&a.status==='published').map(a=>a.id));pgBrowse()">重置</button>
+      </div>
+      <div class="card-body">
+        ${S.selectedIds.size===0?'<div style="font-size:12px;color:var(--text3)">未选择任何资产</div>':
+          [...S.selectedIds].map(id=>{const a=S.assets.find(x=>x.id===id);return a?`<div class="sub-box">
+            <span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span>
+            <span style="flex:1;font-size:12px">${a.name}</span>
+            ${a.mandatory?'<span class="badge badge-mandatory">🔒</span>':`<button class="btn btn-sm btn-secondary" onclick="S.selectedIds.delete('${id}');pgBrowse()">移除</button>`}
+          </div>`:''}).join('')}
+      </div>
+    </div>
+  `);
+}
+
+function toggleSel(id) { S.selectedIds.has(id)?S.selectedIds.delete(id):S.selectedIds.add(id); pgBrowse(); }
+
+async function genSub() {
+  if(S.selectedIds.size===0) return toast('请至少选择一个资产','error');
+  const label=prompt('为此订阅取名：')||`订阅-${Date.now()}`;
+  const me=S.users.find(u=>u.id===S.currentUser);
+  const orgId=me?.orgId||'';
+  if(!orgId) return toast('当前用户未绑定组织，请管理员先分配','error');
+  const r=await api('POST','/subscriptions',{
+    userId:S.currentUser, orgId, selectedAssetIds:[...S.selectedIds], label
+  });
+  if(!r.success) return toast(r.error,'error');
+  const sub=r.data;
+  const url=`${location.origin}/api/subscriptions/resolve/${sub.token||sub.id}`;
+  await loadAll();
+  const ids=sub.selectedAssetIds||[];
+  openModal('订阅已生成 🎉',`
+    <div class="form-group"><label class="form-label">安装命令</label><div class="sub-token">wsdm install ${url}</div></div>
+    <div class="form-group"><label class="form-label">包含 ${ids.length} 个资产</label>
+      ${ids.map(aid=>{const a=S.assets.find(x=>x.id===aid);return a?`<div class="sub-box"><span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span><span style="font-size:12px;flex:1">${a.name}</span>${a.mandatory?'<span class="badge badge-mandatory">🔒</span>':''}</div>`:''}).join('')}
+    </div>
+  `,[{label:'关闭',cls:'btn-primary',action:closeModal}]);
+}
+
+// ══════════════════════════════════════════════════════════════
+// My Subscriptions (User)
+// ══════════════════════════════════════════════════════════════
+function pgMySubs() {
+  const me = S.users.find(u=>u.id===S.currentUser);
+  const myOrgId = me?.orgId||null;
+  const myOrg = myOrgId ? S.orgs.find(o=>o.id===myOrgId) : null;
+
+  const mine = S.subscriptions.filter(s=>s.userId===S.currentUser);
+  const team = S.subscriptions.filter(s=>s.orgId===myOrgId && s.userId!==S.currentUser);
+
+  function subCard(s, isTeam) {
+    const ids = s.selectedAssetIds||[];
+    const owner = isTeam ? (S.users.find(u=>u.id===s.userId)?.name||s.userId) : null;
+    return `<div class="card mt-12">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${s.label||s.id}${isTeam?` <span style="font-size:10px;background:var(--accent-dim);color:var(--accent);padding:1px 6px;border-radius:8px;font-weight:600">团队</span>`:''}</div>
+          <div style="font-size:11px;color:var(--text3)">${fmtDate(s.createdAt)} · ${ids.length} 个资产${isTeam?` · 创建者: ${owner}`:''}
+          </div>
+        </div>
+        <div class="flex gap-8">
+          <button class="btn btn-sm btn-secondary" onclick="showSubToken('${s.id}')">查看安装命令</button>
+          ${!isTeam?`<button class="btn btn-sm btn-danger" onclick="doDeleteMySub('${s.id}')">删除</button>`:''}
+        </div>
+      </div>
+      <div class="card-body"><div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${ids.map(aid=>{const a=S.assets.find(x=>x.id===aid);return a?`<span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.name}</span>`:''}).join('')}
+      </div></div>
+    </div>`;
+  }
+
+  const empty = `<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">暂无订阅</div><div class="empty-sub">前往"资产浏览"选择资产并生成订阅</div></div>`;
+
+  setPage('我的订阅',
+    myOrg?`我 · ${myOrg.name}`:'我的订阅',
+    '',
+    `${mine.length===0&&team.length===0 ? empty : ''}
+     ${mine.length>0?`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">我的订阅（${mine.length}）</div>${mine.map(s=>subCard(s,false)).join('')}`:''}
+     ${team.length>0?`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 4px">团队订阅 · ${myOrg?.name||''}（${team.length}）</div>${team.map(s=>subCard(s,true)).join('')}`:''}
+    `
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// Modal
+// ══════════════════════════════════════════════════════════════
+function openModal(title, body, buttons=[]) {
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=body;
+  document.getElementById('modalFooter').innerHTML=buttons.map((b,i)=>`<button class="btn ${b.cls}" id="mb${i}">${b.label}</button>`).join('');
+  buttons.forEach((b,i)=>{ document.getElementById(`mb${i}`).onclick=b.action; });
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); document.getElementById('modalBox').classList.remove('modal-lg'); }
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target===document.getElementById('modal')) closeModal(); });
+
+// ══════════════════════════════════════════════════════════════
+// Toast
+// ══════════════════════════════════════════════════════════════
+let _tt;
+function toast(msg, type='') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast ${type}`;
+  void el.offsetWidth; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Utils
+// ══════════════════════════════════════════════════════════════
+function fmtDate(iso) {
+  if(!iso) return '—';
+  return new Date(iso).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s||'').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════════════════════
+(async () => {
+  await loadAll();
+  // 默认取第一个用户作为当前用户（演示用）
+  if (!S.currentUser && S.users.length > 0) S.currentUser = S.users[0].id;
+  renderNav();
+  navigate('dashboard');
+})();
+</script>
+</body>
+</html>

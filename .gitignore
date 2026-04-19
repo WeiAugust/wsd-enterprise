@@ -1,0 +1,33 @@
+# WSD 运行时数据（本地存储，不提交）
+.wsd/audit/
+.wsd/workspace/
+.claude/ai-pending/
+
+# wsd-manager 运行时
+wsd_manager/data/
+wsd_manager/logs/
+wsd_manager/.env
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 依赖
+node_modules/
+*/node_modules/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# 构建产物
+dist/
+build/
+*.log

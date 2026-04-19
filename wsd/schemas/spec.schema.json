@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wsd.internal/schemas/spec.schema.json",
+  "title": "WSD Spec",
+  "description": "需求行为规格文档（BDD 格式）的元数据 schema",
+  "type": "object",
+  "required": ["reqId", "feature", "scenarios"],
+  "additionalProperties": false,
+  "properties": {
+    "reqId": {
+      "type": "string",
+      "pattern": "^REQ-\\d{8}-\\d{3}$",
+      "description": "关联需求ID，格式 REQ-YYYYMMDD-NNN"
+    },
+    "feature": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 100,
+      "description": "功能特性名称"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0.0",
+      "description": "规格版本号（语义化版本）"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "under_review", "approved", "deprecated"],
+      "default": "draft"
+    },
+    "approvedBy": {
+      "type": "string",
+      "description": "审批人（team-lead 或 PM）"
+    },
+    "approvedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "description": "BDD 场景列表",
+      "items": {
+        "type": "object",
+        "required": ["name", "given", "when", "then"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "description": "场景描述"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["happy_path", "edge_case", "error_case", "performance"],
+            "default": "happy_path"
+          },
+          "given": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 3 },
+            "description": "前置条件（GIVEN）"
+          },
+          "when": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 3 },
+            "description": "触发动作（WHEN）"
+          },
+          "then": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 3 },
+            "description": "预期结果（THEN）"
+          },
+          "testCoverage": {
+            "type": "string",
+            "enum": ["required", "optional", "manual_only"],
+            "default": "required"
+          }
+        }
+      }
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "description": "验收标准清单",
+      "items": {
+        "type": "object",
+        "required": ["id", "criterion"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^AC-\\d+$" },
+          "criterion": { "type": "string", "minLength": 10 },
+          "priority": {
+            "type": "string",
+            "enum": ["must", "should", "could"],
+            "default": "must"
+          }
+        }
+      }
+    },
+    "nonFunctional": {
+      "type": "object",
+      "description": "非功能需求",
+      "properties": {
+        "performance": {
+          "type": "object",
+          "properties": {
+            "responseTime": { "type": "string", "example": "< 200ms (P99)" },
+            "throughput": { "type": "string" },
+            "concurrency": { "type": "string" }
+          }
+        },
+        "security": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "availability": { "type": "string", "example": "99.9%" }
+      }
+    },
+    "outOfScope": {
+      "type": "array",
+      "description": "明确不包含的内容",
+      "items": { "type": "string" }
+    },
+    "amendments": {
+      "type": "array",
+      "description": "规格变更历史",
+      "items": {
+        "type": "object",
+        "required": ["version", "date", "changes", "author"],
+        "properties": {
+          "version": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" },
+          "changes": { "type": "string" },
+          "author": { "type": "string" }
+        }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

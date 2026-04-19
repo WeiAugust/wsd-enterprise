@@ -1,0 +1,87 @@
+{
+  "_comment": "后端团队资产注册表示例",
+  "layer": "team",
+  "teamId": "backend-team",
+  "department": "engineering",
+  "version": "1.0.0",
+  "updatedAt": "2026-04-14T00:00:00Z",
+  "maintainers": ["weizhen", "xiaoming"],
+  "inheritsFrom": {
+    "enterprise": true,
+    "department": "engineering"
+  },
+  "assets": {
+    "agents": [
+      {
+        "name": "wsd-executor",
+        "file": "agents/wsd-executor.md",
+        "description": "后端实现执行者（含NestJS/TypeScript最佳实践）",
+        "overrides": "enterprise/wsd-executor",
+        "version": "1.0.0",
+        "tags": ["wsd", "backend", "nestjs"]
+      },
+      {
+        "name": "database-reviewer",
+        "file": "agents/database-reviewer.md",
+        "description": "PostgreSQL数据库审查（后端团队专用）",
+        "version": "1.0.0",
+        "tags": ["database", "postgresql"]
+      }
+    ],
+    "rules": [
+      {
+        "name": "typescript",
+        "file": "rules/typescript.md",
+        "description": "TypeScript编码规范（后端团队）",
+        "version": "1.2.0",
+        "tags": ["typescript"]
+      },
+      {
+        "name": "nestjs-patterns",
+        "file": "rules/nestjs-patterns.md",
+        "description": "NestJS架构模式规范",
+        "version": "1.0.0",
+        "tags": ["nestjs", "architecture"]
+      }
+    ],
+    "skills": [
+      {
+        "name": "wsd-lifecycle",
+        "file": "skills/wsd-lifecycle.md",
+        "description": "WSD生命周期（后端团队定制版）",
+        "overrides": "enterprise/wsd-lifecycle",
+        "version": "1.0.0",
+        "tags": ["wsd"]
+      }
+    ],
+    "mcp": [
+      {
+        "name": "postgresql",
+        "file": "mcp/postgresql.json",
+        "description": "PostgreSQL MCP服务器（开发环境）",
+        "version": "1.0.0",
+        "tags": ["database"]
+      }
+    ]
+  },
+  "settings": {
+    "modelOverrides": {
+      "wsd-executor": "claude-sonnet-4-6",
+      "wsd-reviewer": "claude-sonnet-4-6"
+    },
+    "hooks": {
+      "PostToolUse": [
+        {
+          "matcher": "Write|Edit",
+          "command": "pnpm prettier --write \"$FILE_PATH\"",
+          "description": "代码格式化"
+        },
+        {
+          "matcher": "Write|Edit",
+          "command": "pnpm eslint --fix \"$FILE_PATH\"",
+          "description": "ESLint修复"
+        }
+      ]
+    }
+  }
+}

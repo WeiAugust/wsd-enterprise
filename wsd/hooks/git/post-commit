@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# WSD AI 编码统计 — git post-commit hook
+#
+# 每次 git commit 后自动触发，计算 AI 编码指标：
+#   - AI 编码行数、AI 编码占比、AI 接受率
+#
+# 由 wsd install.sh 安装到 .git/hooks/post-commit
+# 若项目已有 post-commit hook，install.sh 会追加调用而非覆盖。
+
+set -e
+
+# 找到项目根目录下的分析器
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$PROJECT_ROOT" ]; then
+  exit 0
+fi
+
+ANALYZER="$PROJECT_ROOT/.claude/hooks/ai-commit-analyzer.js"
+if [ ! -f "$ANALYZER" ]; then
+  exit 0
+fi
+
+# Node.js 可用性检查
+if ! command -v node &>/dev/null; then
+  exit 0
+fi
+
+# 异步运行，不阻塞 git commit 返回
+node "$ANALYZER" &
+
+exit 0

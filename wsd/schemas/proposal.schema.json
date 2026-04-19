@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wsd/proposal",
+  "title": "WSD 需求提案",
+  "description": "WSD 需求提案的元数据结构",
+  "type": "object",
+  "required": ["reqId", "title", "status", "phase", "owner", "createdAt", "updatedAt"],
+  "properties": {
+    "reqId": {
+      "type": "string",
+      "pattern": "^REQ-\\d{8}-\\d{3}$",
+      "description": "需求唯一ID，格式：REQ-YYYYMMDD-NNN",
+      "examples": ["REQ-20260414-001"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 100,
+      "description": "需求标题（简短、清晰）"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PROPOSED",
+        "SPECCING",
+        "SPEC_APPROVED",
+        "PLANNING",
+        "PLAN_APPROVED",
+        "EXECUTING",
+        "BLOCKED",
+        "IMPLEMENTED",
+        "VERIFYING",
+        "BUGFIX",
+        "DONE",
+        "ARCHIVED",
+        "CANCELLED",
+        "AMENDING",
+        "QUICK_EXECUTING",
+        "QUICK_DONE",
+        "HOTFIX_EXECUTING",
+        "HOTFIX_DONE"
+      ],
+      "description": "需求当前状态"
+    },
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7,
+      "description": "当前阶段（1-7对应7个生命周期阶段）"
+    },
+    "owner": {
+      "type": "string",
+      "description": "负责人（git user.name）"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间（ISO 8601）"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "最后更新时间"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "标签（如：backend, frontend, api, database）",
+      "examples": [["backend", "api"]]
+    },
+    "externalRef": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["type", "id"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["jira", "feishu", "github", "linear"],
+              "description": "外部系统类型"
+            },
+            "id": {
+              "type": "string",
+              "description": "外部系统中的ID"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "外部系统链接"
+            },
+            "syncedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "最后同步时间"
+            }
+          }
+        }
+      ],
+      "description": "外部系统引用（Jira/飞书/GitHub Issues等）"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["taskId", "reason", "blockedAt", "blockedBy"],
+        "properties": {
+          "taskId": { "type": "string" },
+          "reason": { "type": "string" },
+          "blockedAt": { "type": "string", "format": "date-time" },
+          "blockedBy": { "type": "string" },
+          "owner": { "type": "string" },
+          "resolvedAt": { "type": "string", "format": "date-time" },
+          "resolvedBy": { "type": "string" },
+          "resolution": { "type": "string" }
+        }
+      },
+      "description": "阻塞记录列表"
+    },
+    "approvals": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "type": "object",
+          "properties": {
+            "approvedBy": { "type": "string" },
+            "approvedAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "plan": {
+          "type": "object",
+          "properties": {
+            "approvedBy": { "type": "string" },
+            "approvedAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "verify": {
+          "type": "object",
+          "properties": {
+            "approvedBy": { "type": "string" },
+            "approvedAt": { "type": "string", "format": "date-time" },
+            "result": { "type": "string", "enum": ["PASS", "PARTIAL", "FAIL"] }
+          }
+        }
+      },
+      "description": "各阶段人工确认记录"
+    },
+    "scopes": {
+      "type": "array",
+      "description": "多仓库作用域列表（单仓库时为空或省略）",
+      "items": {
+        "type": "object",
+        "required": ["id", "repo", "branch", "owner", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "scope 标识，如 backend/frontend/infra",
+            "examples": ["backend", "frontend"]
+          },
+          "repo": {
+            "type": "string",
+            "description": "代码仓库路径，如 company/user-service"
+          },
+          "branch": {
+            "type": "string",
+            "description": "功能分支名"
+          },
+          "description": {
+            "type": "string",
+            "description": "该 scope 负责的内容说明"
+          },
+          "owner": {
+            "type": "string",
+            "description": "该 scope 负责人"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "PLAN_APPROVED", "EXECUTING", "BLOCKED", "IMPLEMENTED", "VERIFIED", "DONE"],
+            "description": "该 scope 的独立状态"
+          },
+          "taskFile": {
+            "type": "string",
+            "description": "该 scope 的任务清单文件路径，如 .wsd/requirements/REQ-xxx/tasks-backend.md"
+          },
+          "progress": {
+            "type": "object",
+            "properties": {
+              "done":  { "type": "integer", "minimum": 0 },
+              "total": { "type": "integer", "minimum": 0 }
+            },
+            "description": "任务完成进度"
+          },
+          "contractVersion": {
+            "type": "string",
+            "description": "该 scope 最后确认的接口契约版本（用于检测契约漂移）"
+          }
+        }
+      }
+    },
+    "track": {
+      "type": "string",
+      "enum": ["normal", "quickfix", "hotfix"],
+      "default": "normal",
+      "description": "需求类型：正常流程/快速修复/热修复"
+    },
+    "amendments": {
+      "type": "array",
+      "description": "需求变更记录",
+      "items": {
+        "type": "object",
+        "required": ["id", "level", "description", "requestedBy", "requestedAt"],
+        "properties": {
+          "id":            { "type": "string" },
+          "level":         { "type": "string", "enum": ["M0","M1","M2","M3","M4"] },
+          "description":   { "type": "string" },
+          "requestedBy":   { "type": "string" },
+          "requestedAt":   { "type": "string", "format": "date-time" },
+          "affectedSpecs": { "type": "array", "items": { "type": "string" } },
+          "affectedTasks": { "type": "array", "items": { "type": "string" } },
+          "newTasks":      { "type": "array", "items": { "type": "string" } },
+          "estimatedExtraHours": { "type": "number" }
+        }
+      }
+    },
+    "bugs": {
+      "type": "array",
+      "description": "验收阶段发现的 bug 记录",
+      "items": {
+        "type": "object",
+        "required": ["id", "acId", "description", "severity", "status"],
+        "properties": {
+          "id":          { "type": "string" },
+          "acId":        { "type": "string", "description": "对应的验收条件 ID" },
+          "description": { "type": "string" },
+          "severity":    { "type": "string", "enum": ["CRITICAL","HIGH","MEDIUM","LOW"] },
+          "status":      { "type": "string", "enum": ["OPEN","FIXING","FIXED","WONT_FIX"] },
+          "type":        { "type": "string", "enum": ["IMPL_DEFECT","SPEC_MISSING","TEST_ERROR","ENV_ISSUE"] },
+          "resolvedAt":  { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
