@@ -195,6 +195,21 @@
     .toast.show { opacity: 1; transform: translateY(0); }
     .toast.success { border-color: var(--green); }
     .toast.error { border-color: var(--red); }
+
+    /* ── User Info Chip ── */
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg,var(--accent),var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-info-chip { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; position: relative; user-select: none; }
+    .user-info-chip:hover { background: var(--surface3); }
+    .user-info-name { font-size: 12px; color: var(--text2); font-weight: 500; }
+    .user-info-org { font-size: 10px; color: var(--text3); }
+    .user-dropdown { position: absolute; top: calc(100% + 6px); right: 0; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); min-width: 200px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: none; }
+    .user-dropdown.open { display: block; }
+    .user-dropdown-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text2); cursor: pointer; transition: background 0.1s; }
+    .user-dropdown-item:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+    .user-dropdown-item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+    .user-dropdown-item:hover { background: var(--surface2); color: var(--text); }
+    .user-dropdown-item.active { background: var(--accent-dim); color: var(--accent); }
+    .user-dropdown-label { padding: 6px 12px 4px; font-size: 9px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
   </style>
 </head>
 <body>
@@ -222,7 +237,10 @@
         <div class="topbar-title" id="pageTitle">仪表盘</div>
         <div class="topbar-sub" id="pageSubtitle"></div>
       </div>
-      <div class="topbar-actions" id="topbarActions"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="topbar-actions" id="topbarActions"></div>
+        <div id="topbarUserInfo"></div>
+      </div>
     </div>
     <div class="content" id="pageContent"></div>
   </main>
@@ -251,7 +269,7 @@ const S = {
   currentUser: null,
   editAsset: null, editFileTab: 'main',
   browseType: 'hook', selectedIds: new Set(),
-  assetFilter: { type: '', status: '' },
+  assetFilter: { type: '', status: '', org: '' },
   selectedOrgId: null,
 };
 
@@ -329,15 +347,34 @@ function renderNav() {
     return `<div class="nav-item ${active}" onclick="navigate('${item.id}')"><span class="ni">${item.icon}</span>${item.label}</div>`;
   }).join('');
 
-  const userPicker = S.role === 'user' ? `
-    <div style="padding:10px 12px;border-top:1px solid var(--border);margin-top:auto">
-      <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">当前用户</div>
-      <select class="form-select" style="font-size:11px" onchange="S.currentUser=this.value;renderNav();renderPage()">
-        ${S.users.map(u=>{const org=S.orgs.find(o=>o.id===u.orgId);return `<option value="${u.id}" ${S.currentUser===u.id?'selected':''}>${u.name||u.id}${org?' ('+org.name+')':''}</option>`;}).join('')}
-      </select>
-    </div>` : '';
+  document.getElementById('sidebarNav').innerHTML = navItems;
+  renderUserInfo();
+}
 
-  document.getElementById('sidebarNav').innerHTML = navItems + userPicker;
+function renderUserInfo() {
+  const el = document.getElementById('topbarUserInfo');
+  if (!el) return;
+  if (S.role === 'user' && S.currentUser) {
+    const u = S.users.find(x => x.id === S.currentUser);
+    if (u) {
+      const initials = (u.name || u.id).slice(0, 2).toUpperCase();
+      const org = S.orgs.find(o => o.id === u.orgId);
+      const userItems = S.users.map(usr => {
+        const uOrg = S.orgs.find(o => o.id === usr.orgId);
+        return `<div class="user-dropdown-item ${S.currentUser===usr.id?'active':''}" onclick="event.stopPropagation();S.currentUser='${usr.id}';renderNav();renderPage()">
+          <div class="user-avatar" style="width:22px;height:22px;font-size:9px">${(usr.name||usr.id).slice(0,2).toUpperCase()}</div>
+          <div><div style="font-size:12px">${usr.name||usr.id}</div>${uOrg?`<div style="font-size:10px;color:var(--text3)">${uOrg.name}</div>`:''}</div>
+        </div>`;
+      }).join('');
+      el.innerHTML = `<div class="user-info-chip" onclick="this.querySelector('.user-dropdown').classList.toggle('open')">
+        <div class="user-avatar">${initials}</div>
+        <span class="user-info-name">${u.name || u.id}</span>
+        ${org ? `<span class="user-info-org">${org.name}</span>` : ''}
+        <span style="font-size:8px;color:var(--text3)">▾</span>
+        <div class="user-dropdown"><div class="user-dropdown-label">切换用户</div>${userItems}</div>
+      </div>`;
+    } else { el.innerHTML = ''; }
+  } else { el.innerHTML = ''; }
 }
 
 function navigate(page) {
@@ -427,7 +464,7 @@ function buildTree(orgs) {
 }
 
 function renderTree(nodes) {
-  const icons = {enterprise:'🏛',department:'🏢',team:'👥',repo:'📁'};
+  const icons = {enterprise:'🏛',department:'🏢',team:'👥',repository:'📁'};
   return nodes.map(n=>`
     <div>
       <div class="org-node-row ${S.selectedOrgId===n.id?'selected':''}" onclick="selectOrg('${n.id}')">
@@ -448,7 +485,7 @@ function renderTree(nodes) {
 function selectOrg(id) {
   S.selectedOrgId = id;
   const org = S.orgs.find(o=>o.id===id); if(!org) return;
-  const adminNames = (org.adminIds||[]).map(uid=>{const u=S.users.find(x=>x.id===uid);return u?u.name||uid:uid;});
+  const adminNames = (org.admins||[]).map(uid=>{const u=S.users.find(x=>x.id===uid);return u?u.name||uid:uid;});
   const orgAssets = S.assets.filter(a=>a.orgId===id);
   document.getElementById('orgDetail').innerHTML = `
     <div class="card">
@@ -478,28 +515,42 @@ function selectOrg(id) {
 }
 
 function showOrgModal(editId, defaultParentId) {
+  const ORG_TYPES = ['enterprise','department','team','repository'];
+  const ORG_TYPE_LABELS = {enterprise:'企业',department:'部门',team:'团队',repository:'仓库'};
   const org = editId ? S.orgs.find(o=>o.id===editId) : null;
-  const opts = S.orgs.map(o=>`<option value="${o.id}" ${(org?.parentId||defaultParentId)===o.id?'selected':''}>${o.name} (${o.type})</option>`).join('');
+  const opts = S.orgs.map(o=>`<option value="${o.id}" ${(org?.parentId||defaultParentId)===o.id?'selected':''}>${o.name} (${ORG_TYPE_LABELS[o.type]||o.type})</option>`).join('');
+  // Auto-select child type based on parent
+  let autoType = null;
+  if (defaultParentId) {
+    const parent = S.orgs.find(o=>o.id===defaultParentId);
+    if (parent) { const pi = ORG_TYPES.indexOf(parent.type); if (pi >= 0 && pi < ORG_TYPES.length-1) autoType = ORG_TYPES[pi+1]; }
+  }
+  const typeDisabled = !!autoType;
+  const typeOptions = ORG_TYPES.map(t=>`<option value="${t}" ${(autoType||org?.type)===t?'selected':''}>${ORG_TYPE_LABELS[t]} (${t})</option>`).join('');
   openModal(org?'编辑组织':'添加组织节点',`
     <div class="form-group"><label class="form-label">名称 *</label><input class="form-input" id="oName" value="${org?.name||''}"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">类型</label>
-        <select class="form-select" id="oType">${['enterprise','department','team','repo'].map(t=>`<option value="${t}" ${org?.type===t?'selected':''}>${t}</option>`).join('')}</select>
+        <select class="form-select" id="oType" ${typeDisabled?'disabled':''}>${typeOptions}</select>
+        ${typeDisabled?`<div style="font-size:10px;color:var(--text3);margin-top:3px">子节点类型已根据上级自动设定</div>`:''}
       </div>
       <div class="form-group"><label class="form-label">上级</label>
-        <select class="form-select" id="oParent"><option value="">（根节点）</option>${opts}</select>
+        <select class="form-select" id="oParent" ${defaultParentId?'disabled':''}><option value="">（根节点）</option>${opts}</select>
       </div>
     </div>
-    <div class="form-group"><label class="form-label">管理员 ID（逗号分隔）</label><input class="form-input" id="oAdmins" value="${(org?.adminIds||[]).join(', ')}"></div>
+    <div class="form-group"><label class="form-label">管理员 ID（逗号分隔）</label><input class="form-input" id="oAdmins" value="${(org?.admins||[]).join(', ')}"></div>
   `,[
     {label:org?'保存':'创建',cls:'btn-primary',action:async()=>{
       const name=document.getElementById('oName').value.trim();
-      const type=document.getElementById('oType').value;
-      const parentId=document.getElementById('oParent').value||null;
-      const adminIds=document.getElementById('oAdmins').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const type=autoType||document.getElementById('oType').value;
+      const parentId=defaultParentId||document.getElementById('oParent').value||null;
+      const admins=document.getElementById('oAdmins').value.split(',').map(s=>s.trim()).filter(Boolean);
       if(!name) return toast('请输入名称','error');
-      org ? await api('PUT',`/orgs/${editId}`,{name,type,parentId,adminIds}) : await api('POST','/orgs',{name,type,parentId,adminIds});
+      const restoreId = org ? editId : (defaultParentId || S.selectedOrgId);
+      const r = org ? await api('PUT',`/orgs/${editId}`,{name,type,parentId,admins}) : await api('POST','/orgs',{name,type,parentId,admins});
+      if(!r.success) return toast(r.error||'操作失败','error');
       closeModal(); await loadAll(); pgOrgs();
+      if(restoreId) selectOrg(restoreId);
     }},
     {label:'取消',cls:'btn-secondary',action:closeModal},
   ]);
@@ -522,7 +573,7 @@ function pgUsers() {
       <tbody>${S.users.length===0?`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px">暂无成员</td></tr>`:
         S.users.map(u=>{
           const org=S.orgs.find(o=>o.id===u.orgId);
-          const isAdmin=S.orgs.some(o=>(o.adminIds||[]).includes(u.id));
+          const isAdmin=S.orgs.some(o=>(o.admins||[]).includes(u.id));
           return `<tr>
             <td class="name">${u.name||u.id}</td><td>${u.email||'—'}</td>
             <td>${org?org.name:u.orgId||'—'}</td>
@@ -568,13 +619,20 @@ async function deleteUser(id) {
 // ══════════════════════════════════════════════════════════════
 function pgAssets() {
   const f=S.assetFilter;
-  const list=S.assets.filter(a=>(!f.type||a.type===f.type)&&(!f.status||a.status===f.status));
-  setPage('资产库（管理视图）',`${list.length} / ${S.assets.length} 个资产`,
+  if(!f.type) f.type=TYPES[0];
+  const byType={};TYPES.forEach(t=>{byType[t]=S.assets.filter(a=>a.type===t&&(!f.status||a.status===f.status)&&(!f.org||a.orgId===f.org));});
+  const list=byType[f.type]||[];
+  setPage('资产库（管理视图）',`${list.length} 个 ${f.type} 资产`,
     `<button class="btn btn-primary" onclick="showCreateAssetModal()">＋ 新建资产</button>`,
-    `<div style="display:flex;gap:8px;margin-bottom:14px">
-      <select class="form-select" style="width:130px" onchange="S.assetFilter.type=this.value;pgAssets()">
-        <option value="">所有类型</option>
-        ${TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${TYPE_ICONS[t]} ${t}</option>`).join('')}
+    `<div class="tabs">
+      ${TYPES.map(t=>`<div class="tab ${f.type===t?'active':''}" onclick="S.assetFilter.type='${t}';pgAssets()">
+        ${TYPE_ICONS[t]} ${t} <span class="tab-count">${byType[t].length}</span>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <select class="form-select" style="width:170px" onchange="S.assetFilter.org=this.value;pgAssets()">
+        <option value="">所有组织</option>
+        ${S.orgs.map(o=>`<option value="${o.id}" ${f.org===o.id?'selected':''}>${o.name}</option>`).join('')}
       </select>
       <select class="form-select" style="width:120px" onchange="S.assetFilter.status=this.value;pgAssets()">
         <option value="">所有状态</option>
@@ -584,14 +642,13 @@ function pgAssets() {
       </select>
     </div>
     <div class="card"><div class="card-body" style="padding:0"><table>
-      <thead><tr><th>名称</th><th>类型</th><th>所属组织</th><th>版本</th><th>状态</th><th>必选</th><th>操作</th></tr></thead>
-      <tbody>${list.length===0?`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px">暂无资产</td></tr>`:
+      <thead><tr><th>名称</th><th>所属组织</th><th>版本</th><th>状态</th><th>必选</th><th>操作</th></tr></thead>
+      <tbody>${list.length===0?`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px">暂无 ${f.type} 类型资产</td></tr>`:
         list.map(a=>{
           const org=S.orgs.find(o=>o.id===a.orgId);
-          const multiTag=a.multiFile?` <span style="font-size:9px;color:var(--accent2)">📁 目录</span>`:'';
+          const multiTag=a.multiFile?` <span style="font-size:9px;color:var(--accent2)">📁</span>`:'';
           return `<tr>
             <td class="name" style="cursor:pointer" onclick="openEditAsset('${a.id}')">${a.name}${multiTag}</td>
-            <td><span class="badge badge-type ${TYPE_COLORS[a.type]}">${TYPE_ICONS[a.type]} ${a.type}</span></td>
             <td style="font-size:11px">${org?org.name:a.orgId||'—'}</td>
             <td style="font-family:var(--mono);font-size:11px">v${a.version}${a.publishedVersion&&a.version!==a.publishedVersion?` <span style="color:var(--text3)">(pub:v${a.publishedVersion})</span>`:''}</td>
             <td>${STATUS_BADGE[a.status]||a.status}</td>
